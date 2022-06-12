@@ -29,7 +29,7 @@ Phobic is a programming language based on the pi-calculus. Phobic is the closest
    - `Proc`
 2. Standard arithmetic and logic have been implemented (more details coming soon)
 
-##To Do
+## To Do:
 1. Build and include unit tests
 2. Create tutorial and sample programs
 3. Create semantic analysis module
