@@ -18,7 +18,7 @@ int yyerror(char * s);
 
 %start program
 %token<var> LAPAR RAPAR LRPAR RRPAR LBPAR RBPAR LSPAR RSPAR PERIOD COMMA COLON BSLASH DEFMACRO SILENT IF NEW PARALLEL DISJOIN REPLICATE STOP ADD SUB MUL DIV MOD NOT OR AND EQ NEQ TRUE FALSE INT_T FLOAT_T BOOL_T CHAR_T STRING_T PROC_T INT FLOAT VAR CHAR STRING PAR FAPP SEND RECEIVE
-%type<ptree> terminal term btype type vardef vdef varterm vterm comp pcalc prog definitions program
+%type<ptree> terminal term btype type vardef vdef variableterm varterm vterm comp pcalc prog definitions program
 
 %left ADD
 %left SUB
@@ -37,6 +37,7 @@ int yyerror(char * s);
 %precedence FAP
 %precedence PDJ
 %precedence IFF
+%precedence VBL
 
 %%
 
@@ -76,20 +77,28 @@ definitions : LBPAR DEFMACRO VAR vdef RBPAR LSPAR pcalc RSPAR definitions {
 ;
 
 pcalc : VAR LAPAR vterm RAPAR PERIOD pcalc %prec SND {
-   printf("TEST IS %s\n", $2);
-   struct AST * subtree = new_node(SEND, $1);
+   char * new_str = (char *) calloc(6+strlen($1), sizeof(char));
+   sprintf(new_str, "SND, %s", $1); 
+   struct AST * subtree = new_node(SEND, new_str);
    concat_ast(subtree, $3);
    concat_ast(subtree, $6);
    $$ = subtree;
 }
-| VAR LRPAR vterm RRPAR PERIOD pcalc %prec RCV {
-   struct AST * subtree = new_node(RECEIVE, $1);
+| VAR LRPAR variableterm RRPAR PERIOD pcalc %prec RCV {
+   char * new_str = (char *) calloc(6+strlen($1), sizeof(char));
+   sprintf(new_str, "RCV, %s", $1); 
+   struct AST * subtree = new_node(RECEIVE, new_str);
    concat_ast(subtree, $3);
    concat_ast(subtree, $6);
    $$ = subtree;
 }
 | SILENT PERIOD pcalc %prec IFF {
    struct AST * subtree = new_node(SILENT, $1);
+   concat_ast(subtree, $3);
+   $$ = subtree;
+}
+| VAR PERIOD pcalc %prec VBL {
+   struct AST * subtree = new_node(VAR, $1);
    concat_ast(subtree, $3);
    $$ = subtree;
 }
@@ -131,6 +140,13 @@ pcalc : VAR LAPAR vterm RAPAR PERIOD pcalc %prec SND {
    concat_ast(subtree, $6);
    $$ = subtree;
 }
+| LRPAR pcalc RRPAR {
+   char * temp = (char *) malloc(3*sizeof(char));
+   sprintf(temp, "()");
+   struct AST * subtree = new_node(PAR, temp);
+   concat_ast(subtree, $2);
+   $$ = subtree;
+}
 | REPLICATE pcalc %prec REP {
    struct AST * subtree = new_node(REPLICATE, $1);
    concat_ast(subtree, $2);
@@ -153,6 +169,19 @@ vterm : varterm COMMA vterm {
 
 varterm : term {$$ = $1;}
 | pcalc {$$ = $1;}
+;
+
+variableterm : VAR COMMA variableterm {
+  struct AST * subtree = new_node(COMMA, $2);
+  struct AST * temp = new_node(VAR, $1);
+  concat_ast(subtree, temp);
+  concat_ast(subtree, $3);
+  $$ = subtree;
+}
+| VAR { 
+  struct AST * subtree = new_node(VAR, $1);
+  $$ = subtree;
+}
 ;
 
 comp : varterm EQ varterm {
@@ -212,7 +241,9 @@ term : term ADD term {
    $$ = subtree;
 }
 | LRPAR term RRPAR {
-   struct AST * subtree = new_node(PAR, NULL);
+   char * temp = (char *) malloc(3*sizeof(char));
+   sprintf(temp, "()");
+   struct AST * subtree = new_node(PAR, temp);
    concat_ast(subtree, $2);
    $$ = subtree;
 }
@@ -224,7 +255,7 @@ term : term ADD term {
 | terminal {$$ = $1;}
 ;
 
-terminal : INT {
+terminal: INT {
    struct AST * subtree = new_node(INT, $1);
    $$ = subtree;
 }
@@ -273,7 +304,9 @@ vardef : VAR COLON type {
 ;
 
 type : btype BSLASH type {
-   struct AST * subtree = new_node(BSLASH, $2);
+   char * new_str = (char *) malloc(3*sizeof(char));
+   sprintf(new_str, "\\");
+   struct AST * subtree = new_node(BSLASH, new_str);
    concat_ast(subtree, $1);
    concat_ast(subtree, $3);
    $$ = subtree;

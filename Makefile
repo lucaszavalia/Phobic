@@ -16,4 +16,9 @@ phobic.tab.c: phobic.y
 .PHONY: clean
 
 clean:
-	rm -rf phobic.output phobic.tab.c phobic.tab.h lex.yy.c test.exe
+	rm -rf phobic.output phobic.tab.c phobic.tab.h lex.yy.c test.exe ast.dot ast.pdf
+
+.PHONY: doc
+
+doc:
+	dot -Tpdf ast.dot -o ast.pdf

@@ -92,7 +92,7 @@ void print_AST(struct AST * tree) {
 
 void get_AST_label_dot(struct AST * tree, FILE * fp) {
    if (tree == NULL) {return;}
-   fprintf(fp, "id%d [label=\"%s\", fontname=\"monospace\"];\n", tree->id, tree->string);
+   fprintf(fp, "id%d [label=\"%s , %d\", fontname=\"monospace\"];\n", tree->id, tree->string, tree->id);
    get_AST_label_dot(tree->next, fp);
    get_AST_label_dot(tree->child, fp);
 }
