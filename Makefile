@@ -1,24 +1,13 @@
-CC=gcc
-CFLAGS=-g
-BISON=bison
-BFLAGS=-v -d -Wcounterexamples
-FLEX=flex
+CC=g++
+CFLAG=-g
+FL=flex
+B=bison
+BFLAG=-v -d -Wcounterexamples
 
-test.exe: main.c structures.c phobic.tab.c lex.yy.c
-	$(CC) $(CLFAGS) main.c structures.c phobic.tab.c lex.yy.c -o test.exe
-
-lex.yy.c: phobic.l
-	$(FLEX) phobic.l
-
-phobic.tab.c: phobic.y
-	$(BISON) $(BFLAGS) phobic.y
-
-.PHONY: clean
+all:
+	$(FL) -o scanner.cpp scanner.l
+	$(B) $(BFLAGS) -o parser.cpp parser.y
+	$(CC) $(CFLAGS) main.cpp scanner.cpp parser.cpp repl.cpp -o out.exe
 
 clean:
-	rm -rf phobic.output phobic.tab.c phobic.tab.h lex.yy.c test.exe ast.dot ast.pdf
-
-.PHONY: doc
-
-doc:
-	dot -Tpdf ast.dot -o ast.pdf
+	rm -rf scanner.cpp parser.cpp parser.hpp location.hh stack.hh position.hh out.exe
