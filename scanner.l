@@ -62,4 +62,6 @@
 "\"".*"\""                    {return Phobic::Parser::make_STRING(yytext,Phobic::location());}
 [ \t\n]+
 
+<<EOF>>                       {return yyterminate();}
+
 %%

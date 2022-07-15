@@ -16,6 +16,19 @@ int Phobic::Repl::parse() {
    return m_parser.parse();
 }
 
+void Phobic::Repl::print() {
+   m_data.printTree();
+   m_data.printTreeDot();
+}
+
+void Phobic::Repl::clear() {
+   m_data.clear();
+}
+
+void Phobic::Repl::setAST(AST * tree) {
+   m_data.setAST(tree);
+}
+
 void Phobic::Repl::switchInputStream(std::istream *is) {
    m_scanner.switch_streams(is, NULL);
 }

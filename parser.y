@@ -18,6 +18,7 @@
    namespace Phobic {
       class Scanner;
       class Repl;
+      class AST;
    }
 }
 
@@ -26,6 +27,7 @@
    #include <iostream>
    #include "scanner.h"
    #include "parser.hpp"
+   #include "ast.hpp"
    #include "repl.h"
    #include "location.hh"
 
@@ -88,21 +90,26 @@
 %token <std::string> VAR "Variable";
 %token <std::string> CHAR "Character Literal";
 %token <std::string> STRING "String Literal";
+%token SEND "Send";
+%token RECEIVE "Receive";
+%token PDISJOIN "Probabilistic Disjunction";
+%token VAPP "Variable Application";
+%token MAPP "Macro Application";
 
-%type<std::string> terminal;
-%type<std::string> term;
-%type<std::string> btype;
-%type<std::string> type;
-%type<std::string> vardef;
-%type<std::string> vdef;
-%type<std::string> variableterm;
-%type<std::string> varterm;
-%type<std::string> vterm;
-%type<std::string> comp;
-%type<std::string> pcalc;
-%type<std::string> definitions;
-%type<std::string> prog;
-%type<std::string> program; 
+%type<Phobic::AST *> terminal;
+%type<Phobic::AST *> term;
+%type<Phobic::AST *> btype;
+%type<Phobic::AST *> type;
+%type<Phobic::AST *> vardef;
+%type<Phobic::AST *> vdef;
+%type<Phobic::AST *> variableterm;
+%type<Phobic::AST *> varterm;
+%type<Phobic::AST *> vterm;
+%type<Phobic::AST *> comp;
+%type<Phobic::AST *> pcalc;
+%type<Phobic::AST *> definitions;
+%type<Phobic::AST *> prog;
+%type<Phobic::AST *> program; 
 
 
 %start program
@@ -130,348 +137,282 @@
 
 %%
 
-program : prog {std::cout << $1 << "\n";}
-| definitions {std::cout << $1 << "\n";}
+program : prog {
+   repl.m_data.setAST($1);
+   $$ = $1;
+}
+| definitions {
+   repl.m_data.setAST($1);
+   $$ = $1;
+}
 ;
 
 prog : LBPAR DEFMACRO VAR vdef RBPAR LCPAR pcalc RCPAR prog {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   $$ += $7;
-   $$ += $8;
-   $$ += $9;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_DEFMACRO, $3);
+   temp->concat($4);
+   temp->concat($7);
+   temp->concat($9);
+   $$ = temp;
 }
-| pcalc {
-   $$ += $1;
-   std::cout << $$ << "\n";
-}
+| pcalc {$$ = $1;}
 ;
 
 definitions :  LBPAR DEFMACRO VAR vdef RBPAR LCPAR pcalc RCPAR definitions {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   $$ += $7;
-   $$ += $8;
-   $$ += $9;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_DEFMACRO, $3);
+   temp->concat($4);
+   temp->concat($7);
+   temp->concat($9);
+   $$ = temp;
 }
 |  LBPAR DEFMACRO VAR vdef RBPAR LCPAR pcalc RCPAR {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   $$ += $7;
-   $$ += $8;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_DEFMACRO, $3);
+   temp->concat($4);
+   temp->concat($7);
+   $$ = temp;
 }
 
 pcalc : VAR LAPAR vterm RAPAR PERIOD pcalc %prec SND {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_SEND, $1);
+   temp->concat($3);
+   temp->concat($6);
+   $$ = temp;
 }
 | VAR LNPAR variableterm RNPAR PERIOD pcalc %prec RCV {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_RECEIVE, $1);
+   temp->concat($3);
+   temp->concat($6);
+   $$ = temp;
 }
 | WAIT LCPAR term RCPAR PERIOD pcalc %prec WAI {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_WAIT, $1);
+   temp->concat($3);
+   temp->concat($6);
+   $$ = temp;
 }
 | VAR PERIOD pcalc %prec VBL {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_VAPP, $1);
+   temp->concat($3);
+   $$ = temp;
 }
 | LBPAR IF comp RBPAR LCPAR pcalc RCPAR PERIOD pcalc %prec IFF {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   $$ += $7;
-   $$ += $8;
-   $$ += $9;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_IF, $2);
+   temp->concat($3);
+   temp->concat($6);
+   temp->concat($9);
+   $$ = temp;
 }
 | LBPAR NEW vdef RBPAR LCPAR pcalc RCPAR {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   $$ += $7;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_NEW, $2);
+   temp->concat($3);
+   temp->concat($6);
+   $$ = temp;
 }
 | LBPAR VAR RBPAR LCPAR vterm RCPAR PERIOD pcalc %prec FAP {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   $$ += $7;
-   $$ += $8;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_MAPP, $2);
+   temp->concat($5);
+   temp->concat($8);
+   $$ = temp;
 }
 | pcalc PARALLEL pcalc {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_PARALLEL, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | pcalc DISJOIN pcalc {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_PARALLEL, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | pcalc DISJOIN LCPAR term RCPAR pcalc %prec PDJ {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   $$ += $4;
-   $$ += $5;
-   $$ += $6;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_PDISJOIN, $2);
+   temp->concat($1);
+   temp->concat($4);
+   temp->concat($6);
+   $$ = temp;
 }
-| LNPAR pcalc RNPAR {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
-}
+| LNPAR pcalc RNPAR {$$ = $2;}
 | REPLICATE pcalc %prec REP {
-   $$ += $1;
-   $$ += $2;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_REPLICATE, $1);
+   temp->concat($2);
+   $$ = temp;
 }
 | STOP {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_STOP, $1);
+   $$ = temp;
 }
 ;
 
 vterm : varterm COMMA vterm {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_COMMA, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
-| varterm {
-   $$ = $1;
-   std::cout << $$ << "\n";
-}
+| varterm {$$ = $1;}
 ;
 
-varterm : term {
-   $$ = $1;
-   std::cout << $$ << "\n";
-}
-| pcalc {
-   $$ = $1;
-   std::cout << $$ << "\n";
-}
+varterm : term {$$ = $1;}
+| pcalc {$$ = $1;}
 ;
 
 variableterm : VAR COMMA variableterm {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";  
+   AST * temp = new AST(symbol_kind::S_COMMA, $2);
+   temp->addChild(symbol_kind::S_VAR, $1);
+   temp->concat($3);
+   $$ = temp;
 }
 | VAR {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_COMMA, $1);
+   $$ = temp;
 }
 ;
 
 comp : varterm EQ varterm {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_EQ, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | varterm NEQ varterm {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_NEQ, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 ;
 
 term : term ADD term {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_ADD, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | term SUB term {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_SUB, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | term MUL term {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_MUL, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | term DIV term {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_DIV, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | term MOD term {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_MOD, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | term AND term {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_AND, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
 | term OR term {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_OR, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
-| LNPAR term RNPAR {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
-}
+| LNPAR term RNPAR {$$ = $2;}
 | NOT term %prec NEG {
-   $$ += $1;
-   $$ += $2;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_NOT, $1);
+   temp->concat($2);
+   $$ = temp;
 }
-| terminal {
-   $$ = $1;
-   std::cout << $$ << "\n";
-}
+| terminal {$$ = $1;}
 ;
 
 terminal : INT {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_INT, $1);
+   $$ = temp;
 }
 | FLOAT {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_FLOAT, $1);
+   $$ = temp;
 }
 | TRUE {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_TRUE, $1);
+   $$ = temp;
 }
 | FALSE {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_FALSE, $1);
+   $$ = temp;
 }
 | CHAR {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_CHAR, $1);
+   $$ = temp;
 }
 | STRING {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_STRING, $1);
+   $$ = temp;
 }
 | VAR {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_VAR, $1);
+   $$ = temp;
 }
 ;
 
 vdef : vardef COMMA vdef {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_COMMA, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
-| vardef {
-   $$ = $1;
-   std::cout << $$ << "\n";
-}
+| vardef {$$ = $1;}
 ;
 
 vardef : VAR COLON type {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_COLON, $2);
+   temp->addChild(symbol_kind::S_VAR, $1);
+   temp->concat($3);
+   $$ = temp;
 }
 ;
 
 type : btype BSLASH type  {
-   $$ += $1;
-   $$ += $2;
-   $$ += $3;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_BSLASH, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
 }
-| btype {
-   $$ = $1;
-   std::cout << $$ << "\n";
-}
+| btype {$$ = $1;}
 ;
 
 btype : INT_T {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_INT_T, $1);
+   $$ = temp;
 }
 | FLOAT_T {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_FLOAT_T, $1);
+   $$ = temp;
 }
 | BOOL_T {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_BOOL_T, $1);
+   $$ = temp;
 }
 | CHAR_T {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_CHAR_T, $1);
+   $$ = temp;
 }
 | STRING_T {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_STRING_T, $1);
+   $$ = temp;
 }
 | PROC_T {
-   $$ = $1;
-   std::cout << $$ << "\n";
+   AST * temp = new AST(symbol_kind::S_PROC_T, $1);
+   $$ = temp;
 }
 ;
 
