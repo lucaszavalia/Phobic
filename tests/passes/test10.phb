@@ -1,0 +1,4 @@
+[new X::Int, Y::Bool, Z::Int\Bool\String] {
+   X<3+4+8>.Y(x).wait{1}.Z<1, x | false, 'c'>.stop
+      $ Y<true & true>.X(y).Z<(y*2)+1, false, 'b'>.stop
+}

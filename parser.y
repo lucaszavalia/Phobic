@@ -75,6 +75,7 @@
 %token <std::string> AND "&";
 %token <std::string> OR "|";
 %token <std::string> NOT "~";
+%token <std::string> CONCAT "++";
 %token <std::string> EQ "==";
 %token <std::string> NEQ "!=";
 %token <std::string> TRUE "True";
@@ -100,8 +101,10 @@
 %type<Phobic::AST *> term;
 %type<Phobic::AST *> btype;
 %type<Phobic::AST *> type;
+%type<Phobic::AST *> mdef;
 %type<Phobic::AST *> vardef;
-%type<Phobic::AST *> vdef;
+%type<Phobic::AST *> chandef;
+%type<Phobic::AST *> cdef;
 %type<Phobic::AST *> variableterm;
 %type<Phobic::AST *> varterm;
 %type<Phobic::AST *> vterm;
@@ -122,6 +125,7 @@
 %left AND
 %left OR
 %left NOT
+%left CONCAT
 %left PARALLEL
 %left DISJOIN
 %precedence NEG
@@ -134,6 +138,7 @@
 %precedence IFF
 %precedence VBL
 %precedence WAI
+%precedence NEW
 
 %%
 
@@ -147,7 +152,7 @@ program : prog {
 }
 ;
 
-prog : LBPAR DEFMACRO VAR vdef RBPAR LCPAR pcalc RCPAR prog {
+prog : LBPAR DEFMACRO VAR mdef RBPAR LCPAR pcalc RCPAR prog {
    AST * temp = new AST(symbol_kind::S_DEFMACRO, $3);
    temp->concat($4);
    temp->concat($7);
@@ -157,14 +162,14 @@ prog : LBPAR DEFMACRO VAR vdef RBPAR LCPAR pcalc RCPAR prog {
 | pcalc {$$ = $1;}
 ;
 
-definitions :  LBPAR DEFMACRO VAR vdef RBPAR LCPAR pcalc RCPAR definitions {
+definitions :  LBPAR DEFMACRO VAR mdef RBPAR LCPAR pcalc RCPAR definitions {
    AST * temp = new AST(symbol_kind::S_DEFMACRO, $3);
    temp->concat($4);
    temp->concat($7);
    temp->concat($9);
    $$ = temp;
 }
-|  LBPAR DEFMACRO VAR vdef RBPAR LCPAR pcalc RCPAR {
+|  LBPAR DEFMACRO VAR mdef RBPAR LCPAR pcalc RCPAR {
    AST * temp = new AST(symbol_kind::S_DEFMACRO, $3);
    temp->concat($4);
    temp->concat($7);
@@ -201,10 +206,17 @@ pcalc : VAR LAPAR vterm RAPAR PERIOD pcalc %prec SND {
    temp->concat($9);
    $$ = temp;
 }
-| LBPAR NEW vdef RBPAR LCPAR pcalc RCPAR {
+| LBPAR NEW cdef RBPAR LCPAR pcalc RCPAR {
    AST * temp = new AST(symbol_kind::S_NEW, $2);
    temp->concat($3);
    temp->concat($6);
+   $$ = temp;
+}
+| LBPAR NEW cdef RBPAR LCPAR pcalc RCPAR PERIOD pcalc %prec NEW {
+   AST * temp = new AST(symbol_kind::S_NEW, $2);
+   temp->concat($3);
+   temp->concat($6);
+   temp->concat($9);
    $$ = temp;
 }
 | LBPAR VAR RBPAR LCPAR vterm RCPAR PERIOD pcalc %prec FAP {
@@ -238,6 +250,21 @@ pcalc : VAR LAPAR vterm RAPAR PERIOD pcalc %prec SND {
    temp->concat($2);
    $$ = temp;
 }
+| VAR LAPAR vterm RAPAR {
+   AST * temp = new AST(symbol_kind::S_SEND, $1);
+   temp->concat($3);
+   $$ = temp;
+}
+| VAR LNPAR variableterm RNPAR {
+   AST * temp = new AST(symbol_kind::S_RECEIVE, $1);
+   temp->concat($3);
+   $$ = temp;
+}
+| WAIT LCPAR term RCPAR {
+   AST * temp = new AST(symbol_kind::S_WAIT, $1);
+   temp->concat($3);
+   $$ = temp;
+}
 | STOP {
    AST * temp = new AST(symbol_kind::S_STOP, $1);
    $$ = temp;
@@ -251,6 +278,7 @@ vterm : varterm COMMA vterm {
    $$ = temp;
 }
 | varterm {$$ = $1;}
+| {$$ = nullptr;}
 ;
 
 varterm : term {$$ = $1;}
@@ -331,6 +359,12 @@ term : term ADD term {
    temp->concat($2);
    $$ = temp;
 }
+| term CONCAT term {
+   AST * temp = new AST(-1*symbol_kind::S_ADD, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
+}
 | terminal {$$ = $1;}
 ;
 
@@ -364,22 +398,46 @@ terminal : INT {
 }
 ;
 
-vdef : vardef COMMA vdef {
+mdef : vardef COMMA mdef {
+   AST * temp = new AST(symbol_kind::S_COMMA, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
+}
+| chandef COMMA mdef {
    AST * temp = new AST(symbol_kind::S_COMMA, $2);
    temp->concat($1);
    temp->concat($3);
    $$ = temp;
 }
 | vardef {$$ = $1;}
+| chandef {$$ = $1;}
+| {$$ = nullptr;}
 ;
 
-vardef : VAR COLON type {
+
+vardef : VAR COLON btype {
    AST * temp = new AST(symbol_kind::S_COLON, $2);
    temp->addChild(symbol_kind::S_VAR, $1);
    temp->concat($3);
    $$ = temp;
 }
+
+cdef : chandef COMMA cdef {
+   AST * temp = new AST(symbol_kind::S_COMMA, $2);
+   temp->concat($1);
+   temp->concat($3);
+   $$ = temp;
+}
+| chandef {$$ = $1;}
 ;
+
+chandef : VAR COLON COLON type {
+   AST * temp = new AST(-1 *symbol_kind::S_COLON, $2);
+   temp->addChild(symbol_kind::S_VAR, $1);
+   temp->concat($4);
+   $$ = temp;
+}
 
 type : btype BSLASH type  {
    AST * temp = new AST(symbol_kind::S_BSLASH, $2);
@@ -419,5 +477,5 @@ btype : INT_T {
 %%
 
 void Phobic::Parser::error(const location& loc, const std::string& m) {
-   std::cerr << "Syntax Error at[" << repl.location() << "]: " << m << std::endl;
+   std::cerr << "Error at [" << repl.location() << "]: " << m << std::endl;
 }

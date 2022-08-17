@@ -12,6 +12,7 @@
 
 %option noyywrap
 %option c++
+%option yylineno
 %option yyclass="Scanner"
 %option prefix="Phobic_"
 
@@ -27,7 +28,7 @@
 "}"                           {return Phobic::Parser::make_RCPAR(yytext,Phobic::location());} 
 "."                           {return Phobic::Parser::make_PERIOD(yytext,Phobic::location());} 
 ","                           {return Phobic::Parser::make_COMMA(yytext,Phobic::location());} 
-":"                           {return Phobic::Parser::make_COLON(yytext,Phobic::location());} 
+":"                           {return Phobic::Parser::make_COLON(yytext,Phobic::location());}
 "\\"                          {return Phobic::Parser::make_BSLASH(yytext,Phobic::location());} 
 "def-macro"                   {return Phobic::Parser::make_DEFMACRO(yytext,Phobic::location());} 
 "wait"                        {return Phobic::Parser::make_WAIT(yytext,Phobic::location());} 
@@ -44,7 +45,8 @@
 "%"                           {return Phobic::Parser::make_MOD(yytext,Phobic::location());} 
 "&"                           {return Phobic::Parser::make_AND(yytext,Phobic::location());} 
 "|"                           {return Phobic::Parser::make_OR(yytext,Phobic::location());} 
-"~"                           {return Phobic::Parser::make_NOT(yytext,Phobic::location());} 
+"~"                           {return Phobic::Parser::make_NOT(yytext,Phobic::location());}
+"++"                          {return Phobic::Parser::make_CONCAT(yytext,Phobic::location());} 
 "=="                          {return Phobic::Parser::make_EQ(yytext,Phobic::location());} 
 "!="                          {return Phobic::Parser::make_NEQ(yytext,Phobic::location());} 
 "True"                        {return Phobic::Parser::make_TRUE(yytext,Phobic::location());}        
@@ -58,8 +60,8 @@
 [0-9]+                        {return Phobic::Parser::make_INT(yytext,Phobic::location());}
 [0-9]+"."[0-9]+               {return Phobic::Parser::make_FLOAT(yytext,Phobic::location());}
 [a-zA-Z][a-zA-Z0-9_]*         {return Phobic::Parser::make_VAR(yytext,Phobic::location());}
-"'"."'"                       {return Phobic::Parser::make_CHAR(yytext,Phobic::location());}
-"\"".*"\""                    {return Phobic::Parser::make_STRING(yytext,Phobic::location());}
+\'([^\\\']|\\.)\'             {return Phobic::Parser::make_CHAR(yytext,Phobic::location());}
+\"([^\\\"]|\\.)*\"            {return Phobic::Parser::make_STRING(yytext,Phobic::location());}
 [ \t\n]+
 
 <<EOF>>                       {return yyterminate();}

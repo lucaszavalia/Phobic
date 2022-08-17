@@ -1,0 +1,8 @@
+[def-macro thing X:Int, Y:Bool] {
+   [new Z::Int\Bool] {
+      Z<X, Y>.
+      stop
+   }
+}
+
+[thing] {0.01, True, False}.stop

@@ -18,10 +18,11 @@ namespace Phobic {
       public:
          Repl();
          int parse();
+         void typeCheck();
          void switchInputStream(std::istream *is);
-	 void print();
-	 void clear();
-	 void setAST(AST * tree);
+	      void print();
+	      void clear();
+	      void setAST(AST * tree);
          friend class Parser;
          friend class Scanner;
    };       

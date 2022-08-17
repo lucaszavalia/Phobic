@@ -7,13 +7,11 @@
 #include <fstream>
 
 namespace Phobic {
-   
-
 
    class AST {
       private:
          int id;
-	 int tok;
+	      int tok;
          std::string raw;
          AST * parent;
          std::vector<AST *> children;
@@ -26,7 +24,7 @@ namespace Phobic {
 
          void printDotLabels(AST * subtree, std::ofstream& ofs) {
             if (subtree == nullptr) {return;}
-            ofs << "id" << subtree->id << " [label=\"" << subtree->raw << " ; " << subtree->tok << "\", fontname=\"monospace\"];\n";
+            ofs << "id" << subtree->id << " [label=\"" << subtree->id << " ; " << subtree->raw << " ; " << subtree->tok << "\", fontname=\"monospace\"];\n";
             for (int i = 0; i < subtree->children.size(); i++) {
                printDotLabels(subtree->children[i], ofs);
             }
@@ -65,16 +63,16 @@ namespace Phobic {
            freeAST();
         }
 
-	void freeAST() {
+	     void freeAST() {
             for (int i = 0; i < children.size(); i++) {
                delete children[i];
                children[i] = nullptr;
             }
-	    children.clear();
+	         children.clear();
             tok = -1;
             raw = "";
             parent = nullptr;
-	}
+	     }
 
         void addChild(int newToken, std::string newRaw) {
             AST * temp = new AST(newToken, newRaw);
@@ -101,8 +99,14 @@ namespace Phobic {
             ofs.close();
         }
 
+        std::string getRaw() {return raw;}
+        int getTok() {return tok;}
+        int getId() {return id;}
+        int getSize() {return children.size();}
+        AST * getChild(int i) {return children[i];}
+	     AST * getLast() {return children.back();}
+	     bool isLeaf() {return children.empty();}
    };
-
 }
 
 #endif

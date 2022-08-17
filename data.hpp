@@ -15,12 +15,16 @@ namespace Phobic {
 
       public:
         Data();
-	void setAST(AST * tree);
+        AST * getAST();
+        void setAST(AST * tree);
+        void setSemantics(AST * tree);
         void addNode(int token, std::string data);
         void addSubtree(AST * subtree);
+        void typeCheck();
         void printTree();
         void printTreeDot();
-	void clear();
+        void printSemantics();
+	     void clear();
    };
 }
 

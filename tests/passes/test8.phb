@@ -1,0 +1,6 @@
+[new X::Int\Bool] {
+   X<3, true>.
+   X(y, z).
+   X<y+1, ~z>.
+   stop
+}

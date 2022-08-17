@@ -13,12 +13,17 @@ unsigned int Phobic::Repl::location() const {
 
 int Phobic::Repl::parse() {
    m_location = 0;
-   return m_parser.parse();
+   auto result = m_parser.parse();
+   m_data.setSemantics(m_data.getAST());
+   return result;
 }
+
+void Phobic::Repl::typeCheck() { m_data.typeCheck(); }
 
 void Phobic::Repl::print() {
    m_data.printTree();
    m_data.printTreeDot();
+   m_data.printSemantics();
 }
 
 void Phobic::Repl::clear() {

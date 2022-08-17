@@ -1,0 +1,17 @@
+[def-macro m1 X:Int] {
+   [new chan1::Int] {
+      chan1<X>.wait{2}.stop
+         $ wait{1}.chan1(Y1).wait{1}.chan1<Y1 + 1>.stop
+         $ wait{1}.chan1(Y2).chan1<Y2 + 3>.wait{1}.stop
+   }
+}
+
+[def-macro m2 Y:String] {
+   [new chan2::String] {
+      chan2<"This ">.wait{2}.stop
+         $ wait{1}.chan2<Y>.wait{1}.stop
+         $ wait{2}.chan2<" is gross">.stop
+   }
+}
+
+[m1]{4}.stop @{0.35} [m2]{"cheese"}.stop

@@ -1,0 +1,5 @@
+[def-macro thing X:Int] {
+   stop
+}
+
+[whatever]{3}.stop

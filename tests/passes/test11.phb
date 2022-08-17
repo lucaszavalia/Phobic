@@ -1,0 +1,7 @@
+[new X::Int\Bool\String] {
+   X <
+      3 + 4,
+      True & False,
+      "this " ++ "that\n"
+   > . stop
+}
