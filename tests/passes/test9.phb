@@ -1,6 +1,0 @@
-[new X::Int\Bool\Char] {
-   X<3, true, 'c'>.
-   X(a, b, c).
-   X<a+1, ~b, c>.
-   stop
-}

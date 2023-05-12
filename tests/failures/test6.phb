@@ -1,5 +1,0 @@
-[new X::Float] {
-   X<0.3>.stop 
-      @{True}
-         X<0.007>.stop
-}

@@ -1,3 +1,0 @@
-[new X::Int] {
-   X<3 & true>.stop
-}

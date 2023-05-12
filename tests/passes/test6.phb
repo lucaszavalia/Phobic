@@ -1,5 +1,0 @@
-[new X::Int\Float\Bool\Char\String\Proc]{
-   X<1, 0.5, true, 'c', "this", wait{3}>.
-   X(A1, A2, A3, A4, A5, A6).
-   stop
-}

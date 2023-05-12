@@ -1,1 +1,0 @@
-[new X:Int, Y:Int\Bool, Z:Int\Float\Bool]{X<3>.X(a).silent.Y<a+(3*2), True>.Y(b, c).silent.Z<(b-1)%2, 3.2, ~c & c>._}

@@ -1,9 +1,0 @@
-[def-macro thing X:Int, Y:Bool, Z::Int] {
-   [if Y == True] {
-      Z<X>
-   }.stop
-}
-
-[new Chan::Int]{
-   [thing] {3, True, Chan}.stop
-}
