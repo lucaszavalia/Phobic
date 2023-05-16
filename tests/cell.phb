@@ -1,0 +1,12 @@
+`example of cell class`
+
+(class Cell) {
+   (constructor x:a) {
+
+   }
+
+   public inPort:#a
+   public outPort:#a
+   private port1:#a
+   private port2:#a
+}

@@ -1,4 +1,4 @@
-`Examples of basic types`
+`Examples of basic types more nonsense`
 (type IntSyncChan) { #Int }
 (type IntAsynChan) { $Int }
 (type IntChanPair) { <#Int, $Int> }
@@ -7,15 +7,18 @@
 (type ParamProc) { Int -> $Int -> Proc }
 (type HigherOrderProc) { #Lexical -> (Lexical -> Lexical -> #Lexical -> Proc) -> Proc }
 `Specialized Channels`
-(type LexicalEncryption) { <#ENCRYPT{Lexical, "AES"} , #DECRYPT{Lexical, "AES"}> }
+(type LexicalEncryption) { <#ENCRYPT{Lexfical, "AES"} , #DECRYPT{Lexical, "AES"}> }
 (type AsyncIntIO) { $IO{Int} }
-(type RNG) { $RAND{Float} }
+(type RNG) { $RAND{Float, 4} }
 (type AsyncLexicalFile) { $FILE{Lexical, "Name", "RW"} }
 (type SyncSocket) { #SOCKET{Float} }
 `refined types`
-(type Even) { x:Int where x%2==0 }
+(type Even) {
+   refine x:Int 
+   with x%2==0
+}
 (type IPAdress) { 
-   < a:Int, b:Int, c:Int, d:Int > where
-   0 <= a and 0 <= b and 0 <= c and 0 <= d and 
-   255 >= a and 255 >= b and 255 >= c and 255 >= d
+   refine < a:Int, b:Int, c:Int, d:Int > 
+   with 0 <= a and 0 <= b and 0 <= c and 0 <= d and 
+        255 >= a and 255 >= b and 255 >= c and 255 >= d
 }

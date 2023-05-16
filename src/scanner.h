@@ -22,6 +22,7 @@ namespace Phobic {
          Scanner(Repl &repl) : m_repl(repl) {}
          virtual ~Scanner() {}
          virtual Phobic::Parser::symbol_type get_next_token();
+         int get_yylineno() {return yylineno;}
    };
 }
 

@@ -30,6 +30,7 @@
 ","                           {return Phobic::Parser::make_COMMA(yytext,Phobic::location());}
 ":"                           {return Phobic::Parser::make_COLON(yytext,Phobic::location());}
 "::"                          {return Phobic::Parser::make_OBJACC(yytext,Phobic::location());}
+"refine"                      {return Phobic::Parser::make_REFINE(yytext,Phobic::location());}
 "with"                        {return Phobic::Parser::make_WITH(yytext,Phobic::location());}
 "where"                       {return Phobic::Parser::make_WHERE(yytext,Phobic::location());}
 ":-"                          {return Phobic::Parser::make_PROVES(yytext,Phobic::location());}

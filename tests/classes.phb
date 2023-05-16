@@ -1,0 +1,36 @@
+`test import capability`
+import "types.phb"
+
+`base class`
+(class Base) {
+   (constructor x:Int, y:Float) {
+      port1!<x> . stop |
+      port2!<y> . stop |
+      someproc
+   }
+
+   private port1:#Int
+   private port2:#Float
+   public port3:$<Int, Float>
+
+   private (agent someproc) {
+      port1?(x).port1!<x+1>.stop |
+      port2?(y).port2!<y+0.1>.stop |
+      port1!<a>.stop |
+      port2!<b>.stop |
+      port3?(a,b).stop |
+      someproc
+   }
+}
+
+`derived class`
+(class Derived :- public Base) {
+   private (agent someproc) {
+      port3?(a,b).stop |
+      port2?(x).port2!<x+0.2>.stop |
+      port1?(y).port1!<y+2>.stop |
+      port2!<a>.stop |
+      port1!<b>.stop |
+      someproc
+   }
+}

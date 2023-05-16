@@ -31,6 +31,8 @@
    #include "scanner.h"
    #include "location.hh"
 
+   extern int yylineno;
+
    static Phobic::Parser::symbol_type yylex(Phobic::Scanner& scanner, Phobic::Repl& repl) {
       return scanner.get_next_token();
    }
@@ -59,6 +61,7 @@
 %token <std::string> COMMA ",";
 %token <std::string> COLON ":";
 %token <std::string> OBJACC "::";
+%token <std::string> REFINE "refine";
 %token <std::string> WITH "with";
 %token <std::string> WHERE "where";
 %token <std::string> PROVES ":-";
@@ -185,6 +188,8 @@
 %type <Phobic::AST> btype;
 %type <Phobic::AST> refinement;
 %type <Phobic::AST> pseudotype;
+%type <Phobic::AST> pseudotypelist;
+%type <Phobic::AST> pseudotdef;
 %type <Phobic::AST> rtypelist;
 %type <Phobic::AST> fml;
 %type <Phobic::AST> fcomp;
@@ -604,10 +609,11 @@ btype : INT_T {
 }
 ;
 
-refinement : pseudotype WHERE fml {
-   Phobic::AST tree = mkAST(symbol_kind::S_WHERE, TYPE, $2);
-   tree->concat($1);
-   tree->concat($3);
+refinement : REFINE pseudotype WITH fml {
+   Phobic::AST tree = mkAST(symbol_kind::S_REFINE, TYPE, $1);
+   tree->concat($2);
+   Phobic::AST subtre = mkAST(symbol_kind::S_WITH, TYPE, $3);
+   tree->concat($4);
    $$ = tree;
 }
 ;
@@ -620,26 +626,52 @@ typelist : type COMMA typelist {
 }
 | type {$$ = $1;}
 
-pseudotype : pseudotype BSLASH pseudotype %prec BINARY {
-   Phobic::AST tree = mkAST(symbol_kind::S_BSLASH, TYPE, $2);
+pseudotype : LAPAR pseudotypelist RAPAR {
+   Phobic::AST tree = mkAST(symbol_kind::S_BSLASH, TYPE, "()");
+   tree->concat($2);
+   $$ = tree;
+}
+| pseudotype ARROW pseudotype %prec BINARY {
+   Phobic::AST tree = mkAST(symbol_kind::S_ARROW, TYPE, $2);
    tree->concat($1);
    tree->concat($3);
    $$ = tree;
 }
-| pseudotype ARROW pseudotype %prec BINARY
+| HASHTAG pseudotdef %prec UNARY {
+   Phobic::AST tree = mkAST(symbol_kind::S_HASHTAG, TYPE, $1);
+   tree->concat($2);
+   $$ = tree;
+}
+| DOLLAR pseudotdef %prec UNARY {
+   Phobic::AST tree = mkAST(symbol_kind::S_DOLLAR, TYPE, $1);
+   tree->concat($2);
+   $$ = tree;
+}
 | HASHTAG pseudotype %prec UNARY {
    Phobic::AST tree = mkAST(symbol_kind::S_HASHTAG, TYPE, $1);
    tree->concat($2);
    $$ = tree;
 }
-| DOLLAR pseudotype %prec BINARY {
+| DOLLAR pseudotype %prec UNARY {
    Phobic::AST tree = mkAST(symbol_kind::S_DOLLAR, TYPE, $1);
    tree->concat($2);
    $$ = tree;
 }
-| LBPAR pseudotype RBPAR {
-   Phobic::AST tree = mkAST(symbol_kind::S_LIST, TYPE, "[]");
+| TILDE pseudotype %prec UNARY {
+   Phobic::AST tree = mkAST(symbol_kind::S_TILDE, TYPE, $1);
    tree->concat($2);
+   $$ = tree;
+}
+| LBPAR pseudotype PARALLEL INT RBPAR {
+   Phobic::AST tree = mkAST(symbol_kind::S_LIST, TYPE , "[]");
+   Phobic::AST size = mkAST(symbol_kind::S_INT, TYPE, $4);
+   tree->concat($2);
+   tree->concat(size);
+   $$ = tree;
+}
+| VAR LCPAR pseudotypelist RCPAR {
+   Phobic::AST tree = mkAST(symbol_kind::S_VAR, TYPE, $1);
+   tree->concat($3);
    $$ = tree;
 }
 | LNPAR pseudotype RNPAR {$$ = $2;}
@@ -650,6 +682,7 @@ pseudotype : pseudotype BSLASH pseudotype %prec BINARY {
    tree->concat($3);
    $$ = tree;
 }
+| rtype {$$ = $1;}
 ;
 
 rtype :  INT_T {
@@ -669,6 +702,58 @@ rtype :  INT_T {
    $$ = tree;
 }
 ;
+
+pseudotypelist : pseudotype COMMA pseudotypelist {
+   Phobic::AST tree = mkAST(symbol_kind::S_COMMA, TYPE, $2);
+   tree->concat($1);
+   tree->concat($3);
+   $$ = tree;
+}
+| pseudotype {$$ = $1;}
+;
+
+pseudotdef : IO LCPAR pseudotype RCPAR {
+   Phobic::AST tree = mkAST(symbol_kind::S_IO, TYPE, $1);
+   tree->concat($3);
+   $$ = tree;
+}
+| FILE LCPAR pseudotype COMMA STRING COMMA STRING RCPAR {
+   Phobic::AST tree = mkAST(symbol_kind::S_FILE, TYPE, $1);
+   tree->concat($3);
+   Phobic::AST temp1 = mkAST(symbol_kind::S_STRING, LEX, $5);
+   tree->concat(temp1);
+   Phobic::AST temp2 = mkAST(symbol_kind::S_STRING, LEX, $7);
+   tree->concat(temp2);
+   $$ = tree;
+}
+| RAND LCPAR pseudotype COMMA INT RCPAR {
+   Phobic::AST tree = mkAST(symbol_kind::S_RAND, TYPE, $1);
+   tree->concat($3);
+   Phobic::AST temp = mkAST(symbol_kind::S_INT, INT, $5);
+   tree->concat(temp);
+   $$ = tree;
+}
+| ENCRYPT LCPAR pseudotype COMMA STRING RCPAR {
+   Phobic::AST tree = mkAST(symbol_kind::S_ENCRYPT, TYPE, $1);
+   tree->concat($3);
+   Phobic::AST temp = mkAST(symbol_kind::S_STRING, LEX, $5);
+   tree->concat(temp);
+   $$ = tree;
+}
+| DECRYPT LCPAR pseudotype COMMA STRING RCPAR {
+   Phobic::AST tree = mkAST(symbol_kind::S_DECRYPT, TYPE, $1);
+   tree->concat($3);
+   Phobic::AST temp = mkAST(symbol_kind::S_STRING, LEX, $5);
+   tree->concat(temp);
+   $$ = tree;
+}
+| SOCKET LCPAR pseudotype RCPAR { //unfinished
+   Phobic::AST tree = mkAST(symbol_kind::S_SOCKET, TYPE, $1);
+   tree->concat($3);
+   $$ = tree;
+}
+;
+
 
 rtypelist : VAR COLON rtype COMMA rtypelist {
    Phobic::AST tree = mkAST(symbol_kind::S_COMMA, TYPE, $4);
@@ -836,10 +921,9 @@ tdef : IO LCPAR type RCPAR {
    tree->concat($3);
    $$ = tree;
 }
-| FILE LCPAR STRING COMMA STRING COMMA STRING RCPAR {
+| FILE LCPAR type COMMA STRING COMMA STRING RCPAR {
    Phobic::AST tree = mkAST(symbol_kind::S_FILE, TYPE, $1);
-   Phobic::AST temp0 = mkAST(symbol_kind::S_STRING, LEX, $3);
-   tree->concat(temp0);
+   tree->concat($3);
    Phobic::AST temp1 = mkAST(symbol_kind::S_STRING, LEX, $5);
    tree->concat(temp1);
    Phobic::AST temp2 = mkAST(symbol_kind::S_STRING, LEX, $7);
@@ -1167,5 +1251,5 @@ term : term ADD term %prec BINARY {
 %%
 
 void Phobic::Parser::error(const location& loc, const std::string& m) { 
-   std::cerr << "Error at token " << repl.location() << ":" << m << std::endl;
+   std::cerr << "Error in line " << scanner.get_yylineno() << " at token " << repl.location() << ": " << m << std::endl;
 }
