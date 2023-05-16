@@ -26,13 +26,13 @@ Phobic also supports tuples and finite arrays as indicated by the following nota
 Any type can be typed as unsafe in which case it has the option taking the value `nothing` with the notation `~Type`
 
 ### Liquid Types 
-Liquid types are subtypes of standard types that must satisfy particular constraints in first order logic. Liquid types are defined using standard types that are restricted to a smaller subset of basic types. A liquid type is declared with two pieces, a type expression and a constraint. A type expression is a type annotation similar to the one above except that one or more basic types, `B`, are replaced by variables, `x:B`. The constraint expresses a formula in first order logic containing the variables bound in the type expression. A liquid type can be defined with the syntax `(type name) {TypeExpression where Constraint}`
+Liquid types are subtypes of standard types that must satisfy particular constraints in first order logic. Liquid types are defined using standard types that are restricted to a smaller subset of basic types. A liquid type is declared with two pieces, a type expression and a constraint. A type expression is a type annotation similar to the one above except that one or more basic types, `B`, are replaced by variables, `x:B`. The constraint expresses a formula in first order logic containing the variables bound in the type expression. A liquid type can be defined with the syntax `(type name) {refine TypeExpression with Constraint}`
 
 ### Examples
 - Tuple of asychronous channels that encrypt/decrypt integers `(type AsyncIntAES) { <$ENCRYPT{Int, "AES"}, $DECRYPT{Int, "AES"}> }`
 - 8x8 matrix of floating point numbers `(type Matrix_8x8) { [ [Float | 8] | 8] }
-- Even integers `(type Even) { x:Int where x%2=0 }`
-- Pair of integers where the left is greater than the right and each is greater than 0 `(type Pair) { < x:Float, y:Float > where x >= y and 0 < x and 0 < y }`
+- Even integers `(type Even) {refine  x:Int with x%2=0 }`
+- Pair of integers where the left is greater than the right and each is greater than 0 `(type Pair) {refine < x:Float, y:Float > with x >= y and 0 < x and 0 < y }`
 
 ## Operators
 Phobic uses a restricted syntax primarily and can be thought of a message passing system with recursion.
